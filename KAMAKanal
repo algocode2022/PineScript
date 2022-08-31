@@ -1,0 +1,26 @@
+//@version=5
+indicator(title="KamaKanal", shorttitle="KamaKanal", overlay = true)
+P1 = input.int(21, minval=1)
+P2 = input.int(32, minval=1)
+xPrice = close
+xvnoise = math.abs(xPrice - xPrice[1])
+nAMA = 0.0
+nfastend = 0.666
+nslowend = 0.0645
+nsignal = math.abs(xPrice - xPrice[P1])
+nnoise = math.sum(xvnoise, P1)
+nefratio = nnoise != 0 ? nsignal / nnoise : 0
+nsmooth = math.pow(nefratio * (nfastend - nslowend) + nslowend, 2) 
+nAMA := nz(nAMA[1]) + nsmooth * (xPrice - nz(nAMA[1]))
+//Kanal Ayarları
+max = ta.highest(nAMA, P2)
+min = ta.lowest(nAMA, P2)
+//range = max - min
+flup = min + (80 * (max-min) / 100.0)
+fldn = min + (20 * (max-min) / 100.0)
+flmi = min + (50 * (max-min) / 100.0)
+clr=(nAMA > flup) ? color.green : (nAMA < fldn) ? color.red : color.gray
+plot(nAMA, color=clr, title="KAMA", linewidth=2)
+plot(flup, color=color.green, title="flup")
+plot(fldn, color=color.red, title="fldn")
+plot(flmi, color=color.gray, title="flmi")
