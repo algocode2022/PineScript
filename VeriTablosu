@@ -1,0 +1,30 @@
+// @version=5
+indicator("Veri Tablosu", overlay=true)
+
+truncate(_number, _decimalPlaces) =>
+    _factor = math.pow(10, _decimalPlaces)
+    int(_number * _factor) / _factor
+
+// Veriler
+ema20 = ta.ema(close,20)
+ema50 = ta.ema(close,50)
+rsi = ta.rsi(close,14)
+mktChange = (ta.change(close) / close[1]) * 100
+
+// Tabloyu oluştur
+var table myTable = table.new(position.bottom_right, 5, 2, border_width=1)
+
+// Tabloyu güncelle
+if barstate.islast
+    txt1 = "Kapanış Fiyatı\n" + str.tostring(close)
+    txt2 = "Açılış Fiyatı\n" + str.tostring(open)
+    txt3 = "20-EMA Değeri\n" + str.tostring(truncate(ema20, 2))
+    txt4 = "50-EMA Değeri\n" + str.tostring(truncate(ema50, 2))
+    txt5 = "RSI Değeri\n" + str.tostring(truncate(rsi,2))
+    txt6 = "Yüzde Değişimi\n" + str.tostring(truncate(mktChange,2)) + "%"
+    table.cell(myTable, 0, 0, text=txt1, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 0, 1, text=txt2, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 1, 0, text=txt3, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 1, 1, text=txt4, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 2, 0, text=txt5, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 2, 1, text=txt6, bgcolor=(mktChange > 0 ? color.green : color.red), text_color=color.white)
