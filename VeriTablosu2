@@ -1,0 +1,71 @@
+// @version=5  
+// twitter: @erol_mutlu
+indicator("Veri Tablosu2", overlay=true)
+
+truncate(_number, _decimalPlaces) =>
+    _factor = math.pow(10, _decimalPlaces)
+    int(_number * _factor) / _factor
+
+// Veriler
+//Trend
+ema55 = ta.ema(close, 55)
+ema200 = ta.ema(close, 200)
+
+sma50 = ta.sma(close, 50)
+sma200 = ta.sma(close, 200)
+
+rsi = ta.rsi(close, 14)
+
+ma = ta.sma(hlc3, 20)
+cci = (hlc3 - ma) / (0.015 * ta.dev(hlc3, 20))
+
+k = ta.sma(ta.stoch(rsi, rsi, rsi, 14), 3)
+d = ta.sma(k, 3)
+
+ao = ta.sma(hl2,5) - ta.sma(hl2,34)
+
+fast_ma = ta.ema(close, 12)
+slow_ma = ta.ema(close, 26)
+macd = fast_ma - slow_ma
+signal = ta.ema(macd, 9)
+hist = macd - signal
+
+mfi = ta.mfi(close, 14)
+
+basis = ta.sma(close, 20)
+dev = 2 * ta.stdev(close, 20)
+upper = basis + dev
+lower = basis - dev
+bbr = (close - lower)/(upper - lower)
+
+mktChange = (ta.change(close) / close[1]) * 100
+
+// Tabloyu oluştur
+var table myTable = table.new(position.bottom_right, 12, 2, border_width=1)
+
+// Tabloyu güncelle
+if barstate.islast
+    txt1 = "Kapaniş Fiyati\n" + str.tostring(close)
+    txt2 = "Yüzde Değişimi\n" + str.tostring(truncate(mktChange,2)) + "%"
+    txt3 = "Trend Yönü\n" + str.tostring(ema55 > ema200 ? "Long" : "Short")
+    txt4 = "S200/50 Yönü\n" + str.tostring(close > sma50 and close > sma200 ? "Long" : "Short")
+    txt5 = "E200/55 Yönü\n" + str.tostring(close > ema55 and close > ema200 ? "Long" : "Short")
+    txt6 = "RSI Değeri\n" + str.tostring(truncate(rsi,2))
+    txt7 = "CCI Değeri\n" + str.tostring(truncate(cci,2))
+    txt8 = "SRSI Yönü\n" + str.tostring(k >= 80 and d >= 80 ? "Short" : k <= 20 and d <= 20 ? "Long" : k >= d ? "Güçlü Yukari" : "Güçlü Aşagi")
+    txt9 = "AO Yönü\n" + str.tostring(ao > 0 ? 'Long' : 'Short')
+    txt10 = "MACD Yönü\n" + str.tostring(hist > 0 ? 'Long' : 'Short')
+    txt11 = "MFI Değeri\n" + str.tostring(truncate(mfi,2))
+    txt12 = "BB % Değeri\n" + str.tostring(truncate(bbr,2) * 100) + "%"
+    table.cell(myTable, 0, 0, text=txt1, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 1, 0, text=txt2, bgcolor=(mktChange > 0 ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 2, 0, text=txt3, bgcolor=(ema55 > ema200 ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 3, 0, text=txt4, bgcolor=(close > sma50 and close > sma200 ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 4, 0, text=txt5, bgcolor=(close > ema55 and close > ema200 ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 5, 0, text=txt6, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 6, 0, text=txt7, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 7, 0, text=txt8, bgcolor=(k <= 20 and d <= 20 or k >= d ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 8, 0, text=txt9, bgcolor=(ao > 0 ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 9, 0, text=txt10, bgcolor=(hist > 0 ? color.new(color.green,2) : color.new(color.red,2)), text_color=color.new(color.white,2))
+    table.cell(myTable, 10, 0, text=txt11, bgcolor=color.black, text_color=color.white)
+    table.cell(myTable, 11, 0, text=txt12, bgcolor=color.black, text_color=color.white)
