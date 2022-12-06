@@ -1,0 +1,33 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+strategy("Pivot Band Strategy", overlay=true)
+
+xHigh = request.security(syminfo.tickerid, 'D', high[0])
+xLow = request.security(syminfo.tickerid, 'D', low[0])
+xClose = request.security(syminfo.tickerid, 'D', close[0])
+
+EMA = ta.ema(close, 3)
+
+vPP = (xHigh + xLow + xClose) / 3
+vPU = 2 * vPP - xLow
+vPA = 2 * vPP - xHigh
+plot(vPP, color=color.new(color.green, 0), title='Pivot', style=plot.style_line)
+plot(vPU, color=color.new(color.aqua, 0), title='Pivot Üst', style=plot.style_line)
+plot(vPA, color=color.new(color.red, 0), title='Pivot Alt', style=plot.style_line)
+
+plot(EMA, color=color.yellow, title='EMA', style=plot.style_line)
+
+longCondition = ta.crossover(EMA, vPU)
+if (longCondition)
+    strategy.entry("Al", strategy.long)
+shortCondition = false //ta.crossunder(EMA, vPA) //Çift yön içindir.
+if (shortCondition)
+    strategy.entry("Sat", strategy.short)
+
+if( EMA < vPP and strategy.position_size > 0)
+    strategy.close_all()
+
+if( EMA > vPP and strategy.position_size < 0)
+    strategy.close_all()
