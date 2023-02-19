@@ -1,0 +1,26 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+indicator("YigitBoxPHL2", overlay = true)
+xHigh = request.security(syminfo.tickerid, 'D', high)
+xLow = request.security(syminfo.tickerid, 'D', low)
+xClose = request.security(syminfo.tickerid, 'D', close)
+
+vPP = (xHigh[1] + xLow[1] + xClose[1]) / 3
+vPU = 2 * vPP - xLow[1]
+vPA = 2 * vPP - xHigh[1]
+
+vPP2 = xClose[1]
+vPU2 = vPP2 + (xHigh[1] - xLow[1]) / 2
+vPA2 = vPP2 - (xHigh[1] - xLow[1]) / 2
+
+H1 = plot(vPP, color=color.new(color.green, 70), title='Pivot', style=plot.style_line)
+plot(vPU, color=color.new(color.aqua, 70), title='Pivot Üst', style=plot.style_line)
+plot(vPA, color=color.new(color.red, 70), title='Pivot Alt', style=plot.style_line)
+
+H2 = plot(vPP2, color=color.new(color.green, 70), title='Pivot', style=plot.style_line)
+plot(vPU2, color=color.new(color.aqua, 70), title='Pivot Üst', style=plot.style_line)
+plot(vPA2, color=color.new(color.red, 70), title='Pivot Alt', style=plot.style_line)
+fill(H1, H2, color = vPP < close ? color.new(color.lime, 70) : color.new(color.red, 70))
+barcolor(color = vPP < close ? color.new(color.lime, 0) : color.new(color.red, 0))
