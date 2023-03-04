@@ -1,0 +1,20 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+indicator("KAMA [erolmutlu]", overlay = true)
+P1 = input.int(21, "P1", step = 1, group = "Kama Settings")
+P2 = input.int(2, "P2", step = 1, group = "Kama Settings")
+P3 = input.int(30, "P3", step = 1, group = "Kama Settings")
+P4 = input.source(close, "Sources")
+xPrice = P4
+xvnoise = math.abs(xPrice - xPrice[1])
+nAMA = 0.0
+nfastend = 2.0 / (P2 + 1.0)
+nslowend = 2.0 / (P3 + 1.0)
+nsignal = math.abs(xPrice - xPrice[P1])
+nnoise = math.sum(xvnoise, P1)
+nefratio = nnoise != 0 ? nsignal / nnoise : 0
+nsmooth = math.pow(nefratio * (nfastend - nslowend) + nslowend, 2) 
+nAMA := nz(nAMA[1]) + nsmooth * (xPrice - nz(nAMA[1]))
+plot(nAMA, color = color.aqua, linewidth = 1)
