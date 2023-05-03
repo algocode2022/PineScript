@@ -1,0 +1,31 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+strategy("YKUT", overlay = true)
+Zlema(src,length)=>
+    zxLag = length/2==math.round(length/2) ? length/2 : (length - 1) / 2
+    zxEMA = (src + (src - src[zxLag]))
+    ZLEMA = ta.ema(zxEMA, length)
+
+C = close
+O = open
+H = high
+L = low
+L1 = 0.0
+L2 = 0.0
+C:= (O + H + L + Zlema(C, 100)) / 4
+O:= (nz(C[1]) + nz(O[1])) / 2
+H:= math.max(math.max(H, O), Zlema(H, 100))
+L:= math.min(math.min(L, O), Zlema(L, 100))
+L1:= (O + H + L + Zlema(C, 50)) / 4
+L2:= (nz(L1[1]) + nz(L2[1])) / 2
+
+//strateji iki çizgi üzeri long, iki çizgi altı short
+if (close > math.max(L1, L2))
+    strategy.entry("Al", strategy.long)
+if (close < math.min(L1, L2))
+    strategy.entry("Sat", strategy.short)
+
+plot(L1, color = color.red)
+plot(L2, color = color.green)
