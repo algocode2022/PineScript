@@ -1,0 +1,90 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+strategy("Six Indicator", overlay=false, pyramiding = 1, default_qty_value = 100, default_qty_type = strategy.percent_of_equity, initial_capital=10000)
+h = high
+l = low
+c = close
+o = open
+int e = 0
+int aa = 0
+int bb = 0
+int cc = 0
+int dd = 0
+int ee = 0
+int ff = 0
+int aaa = 0
+int bbb = 0
+int ccc = 0
+int ddd = 0
+int eee = 0
+if c > o 
+    e:=1 
+else 
+    e:=0
+if c < o
+    e:=-1
+if c[1] < c[2] and c[2] > c[3] and c[3] > c[4] and c[4] > c[5] and c[5] > c[6] 
+    aaa:=1 
+else 
+    aaa:=0
+if c[1] > c[2] and c[2] < c[3] and c[3] < c[4] and c[4] < c[5] and c[5] < c[6] 
+    aaa:=-1
+if c[1] < c[2] and c[2] > c[3] and c[3] > c[4] and c[4] > c[5] and c[5] > c[6] and c[6] > c[7] 
+    bbb:=1 
+else 
+    bbb:=0
+if c[1] > c[2] and c[2] < c[3] and c[3] < c[4] and c[4] < c[5] and c[5] < c[6] and c[6] < c[7]
+    bbb:=-1
+if l > l[1] and l[1] < ta.lowest(l,3)[2] and c > c[1] and c[1] < c[2]
+    ccc:=1 
+else 
+    ccc:=0
+if h < h[1] and h[1] > ta.highest(h,3)[2] and c < c[1] and c[1] > c[2]
+    ccc:=-1
+if ta.highest(l,3)-ta.lowest(l,3) <=.2*(ta.highest(h,3)-ta.lowest(l,3))
+    ddd:=1 
+else 
+    ddd:=0
+if ta.highest(h,3)-ta.lowest(h,3) <=.2* (ta.highest(h,3)-ta.lowest(l,3))
+    ddd:=-1
+if c < o and c[1] < o[1]
+    eee:=1 
+else 
+    eee:=0
+if c > o and c[1] > o[1]
+    eee:=-1
+if ta.sma(c,2) < ta.sma(c,5)
+    aa:=1
+if ta.sma(c,2) > ta.sma(c,5)
+    aa:=-1
+if c > ta.sma(c,40)
+    bb:=1
+if c < ta.sma(c,40)
+    bb:=-1
+if ta.highestbars(c,50) > ta.lowestbars(c,50)
+    cc:=1
+if ta.highestbars(c,50) < ta.lowestbars(c,50)
+    cc:=-1
+if (high - low < ta.sma(high - low,10)) and c > c[1] or (high - low > ta.sma(high - low,10)) and c < c[1] 
+    dd:=1
+if (high - low < ta.sma(high - low,10)) and c < c[1] or (high - low > ta.sma(high - low,10)) and c > c[1] 
+    dd:=-1
+if c > (ta.sma(h,15)+ta.sma(l,15))/2
+    ee:=1
+if c < (ta.sma(h,15)+ta.sma(l,15))/2
+    ee:=-1
+if ta.sma(e,3) < 0 
+    ff:=1
+if ta.sma(e,3) > 0 
+    ff:=-1
+
+longCondition = aa+bb+cc+dd+ee+ff > 0 and aaa+bbb+ccc+ddd+eee >=0
+if (longCondition)
+    strategy.entry("My Long Entry Id", strategy.long)
+
+shortCondition = aa+bb+cc+dd+ee+ff < 0 and aaa+bbb+ccc+ddd+eee <=0
+if (shortCondition)
+    strategy.entry("My Short Entry Id", strategy.short)
+plot(strategy.equity, title="equity", color=color.aqua, linewidth=2, style=plot.style_line)
