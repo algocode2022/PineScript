@@ -1,0 +1,301 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Author: ©eerolmutlu
+
+//@version=5
+indicator("EMTradeVKAMA Tarama [BIST]", overlay=true)
+
+//************************************************************************************************************
+// Parameter
+//************************************************************************************************************
+
+screenSet   = input.bool(false, "═════════ Tarama Ayarları ════════")
+lastBarSet = input.bool(true, "Sinyal Bar Kapanış ile")
+tabloaltUst = input.string(title="Tablo Pozisyonu", defval="SagUst", options=["SagAlt", "SagUst", "SolAlt", "SolUst", "OrtaAlt", "OrtaUst"])
+custom_tf   = input.timeframe("", title="Tarama için Periyot")
+length = input.int(title="Length", defval=21, group = "Kama Ayarları")
+fastLength = input.int(title="Fast EMA Length", defval=2, group = "Kama Ayarları")
+slowLength = input.int(title="Slow EMA Length", defval=30, group = "Kama Ayarları")
+sources = input.source(close, "Sources")
+
+n1 = input.int(10, "Channel Length", group = "Wavetrend Ayarları")
+n2 = input.int(21, "Average Length", group = "Wavetrend Ayarları")
+
+screenList  = input.bool(false, "═════════ Tarama yapılacak enstrumanlar ════════")
+asset_01 = input.symbol(title='Asset 01', defval='BIST:XU100')
+asset_02 = input.symbol(title='Asset 02', defval='BIST:AKBNK')
+asset_03 = input.symbol(title='Asset 03', defval='BIST:ALARK')
+asset_04 = input.symbol(title='Asset 04', defval='BIST:ARCLK')
+asset_05 = input.symbol(title='Asset 05', defval='BIST:ASELS')
+asset_06 = input.symbol(title='Asset 06', defval='BIST:ASTOR')
+asset_07 = input.symbol(title='Asset 07', defval='BIST:BIMAS')
+asset_08 = input.symbol(title='Asset 08', defval='BIST:EKGYO')
+asset_09 = input.symbol(title='Asset 09', defval='BIST:ENKAI')
+asset_10 = input.symbol(title='Asset 10', defval='BIST:EREGL')
+asset_11 = input.symbol(title='Asset 11', defval='BIST:FROTO')
+asset_12 = input.symbol(title='Asset 12', defval='BIST:GARAN')
+asset_13 = input.symbol(title='Asset 13', defval='BIST:GUBRF')
+asset_14 = input.symbol(title='Asset 14', defval='BIST:HEKTS')
+asset_15 = input.symbol(title='Asset 15', defval='BIST:ISCTR')
+asset_16 = input.symbol(title='Asset 16', defval='BIST:KCHOL')
+asset_17 = input.symbol(title='Asset 17', defval='BIST:KONTR')
+asset_18 = input.symbol(title='Asset 18', defval='BIST:KOZAL')
+asset_19 = input.symbol(title='Asset 19', defval='BIST:KRDMD')
+asset_20 = input.symbol(title='Asset 20', defval='BIST:ODAS')
+asset_21 = input.symbol(title='Asset 21', defval='BIST:OYAKC')
+asset_22 = input.symbol(title='Asset 22', defval='BIST:PETKM')
+asset_23 = input.symbol(title='Asset 23', defval='BIST:PGSUS')
+asset_24 = input.symbol(title='Asset 24', defval='BIST:SAHOL')
+asset_25 = input.symbol(title='Asset 25', defval='BIST:SASA')
+asset_26 = input.symbol(title='Asset 26', defval='BIST:SISE')
+asset_27 = input.symbol(title='Asset 27', defval='BIST:TCELL')
+asset_28 = input.symbol(title='Asset 28', defval='BIST:THYAO')
+asset_29 = input.symbol(title='Asset 29', defval='BIST:TOASO')
+asset_30 = input.symbol(title='Asset 30', defval='BIST:TUPRS')
+asset_31 = input.symbol(title='Asset 31', defval='BIST:YKBNK')
+asset_32 = input.symbol(title='Asset 32', defval='BIST:ALTIN')
+asset_33 = input.symbol(title='Asset 33', defval='BIST:GLDTR')
+asset_34 = input.symbol(title='Asset 34', defval='')
+asset_35 = input.symbol(title='Asset 35', defval='')
+asset_36 = input.symbol(title='Asset 36', defval='')
+asset_37 = input.symbol(title='Asset 37', defval='')
+asset_38 = input.symbol(title='Asset 38', defval='')
+asset_39 = input.symbol(title='Asset 39', defval='')
+asset_40 = input.symbol(title='Asset 40', defval='')    
+
+//********************************************
+// Indikatör Fonksiyonu
+//********************************************
+screen_kama() =>
+    xPrice = sources
+    xvnoise = math.abs(xPrice - xPrice[1])
+    nAMA = 0.0
+    nfastend = 2.0 / (fastLength + 1.0)
+    nslowend = 2.0 / (slowLength + 1.0)
+    nsignal = math.abs(xPrice - xPrice[length])
+    nnoise = math.sum(xvnoise, length)
+    nefratio = nnoise != 0 ? nsignal / nnoise : 0
+    nsmooth = math.pow(nefratio * (nfastend - nslowend) + nslowend, 2) 
+    nAMA := nz(nAMA[1]) + nsmooth * (xPrice - nz(nAMA[1]))
+
+    ap = hlc3 
+    esa = ta.ema(ap, n1)
+    d = ta.ema(math.abs(ap - esa), n1)
+    ci = (ap - esa) / (0.015 * d)
+    tci = ta.ema(ci, n2)
+    
+    wt1 = tci
+    wt2 = ta.sma(wt1,4)
+
+    int condition = 0
+    if (lastBarSet ? close[1] > nAMA[1] and ta.cross(wt1[1], wt2[1]) and wt2[1] - wt1[1] < 0 : close > nAMA and ta.cross(wt1, wt2) and wt2 - wt1 < 0)
+        condition := 1
+    if (lastBarSet ? close[1] < nAMA[1] and ta.cross(wt1[1], wt2[1]) and wt2[1] - wt1[1] > 0 : close < nAMA and ta.cross(wt1, wt2) and wt2 - wt1 > 0)
+        condition := 2
+    condition
+//********************************************
+//Mevcut Entruman Indikatör gösterimi
+//********************************************
+xPrice = sources
+xvnoise = math.abs(xPrice - xPrice[1])
+nAMA = 0.0
+nfastend = 2.0 / (fastLength + 1.0)
+nslowend = 2.0 / (slowLength + 1.0)
+nsignal = math.abs(xPrice - xPrice[length])
+nnoise = math.sum(xvnoise, length)
+nefratio = nnoise != 0 ? nsignal / nnoise : 0
+nsmooth = math.pow(nefratio * (nfastend - nslowend) + nslowend, 2) 
+nAMA := nz(nAMA[1]) + nsmooth * (xPrice - nz(nAMA[1]))
+plot(nAMA)
+ap = hlc3 
+esa = ta.ema(ap, n1)
+d = ta.ema(math.abs(ap - esa), n1)
+ci = (ap - esa) / (0.015 * d)
+tci = ta.ema(ci, n2)
+
+wt1 = tci
+wt2 = ta.sma(wt1,4)
+barcolor( ta.cross(wt1, wt2) ? (wt2 - wt1 > 0 and close < nAMA ? color.aqua : wt2 - wt1 < 0 and close > nAMA ? color.yellow : na) : na)
+//********************************************
+//************************************************************************************************************
+// Enstruman durumu {
+asset_01_status     = asset_01 == '' ? 0 : request.security(asset_01, custom_tf, screen_kama())
+asset_02_status     = asset_02 == '' ? 0 : request.security(asset_02, custom_tf, screen_kama())
+asset_03_status     = asset_03 == '' ? 0 : request.security(asset_03, custom_tf, screen_kama())
+asset_04_status     = asset_04 == '' ? 0 : request.security(asset_04, custom_tf, screen_kama())
+asset_05_status     = asset_05 == '' ? 0 : request.security(asset_05, custom_tf, screen_kama())
+asset_06_status     = asset_06 == '' ? 0 : request.security(asset_06, custom_tf, screen_kama())
+asset_07_status     = asset_07 == '' ? 0 : request.security(asset_07, custom_tf, screen_kama())
+asset_08_status     = asset_08 == '' ? 0 : request.security(asset_08, custom_tf, screen_kama())
+asset_09_status     = asset_09 == '' ? 0 : request.security(asset_09, custom_tf, screen_kama())
+asset_10_status     = asset_10 == '' ? 0 : request.security(asset_10, custom_tf, screen_kama())
+asset_11_status     = asset_11 == '' ? 0 : request.security(asset_11, custom_tf, screen_kama())
+asset_12_status     = asset_12 == '' ? 0 : request.security(asset_12, custom_tf, screen_kama())
+asset_13_status     = asset_13 == '' ? 0 : request.security(asset_13, custom_tf, screen_kama())
+asset_14_status     = asset_14 == '' ? 0 : request.security(asset_14, custom_tf, screen_kama())
+asset_15_status     = asset_15 == '' ? 0 : request.security(asset_15, custom_tf, screen_kama())
+asset_16_status     = asset_16 == '' ? 0 : request.security(asset_16, custom_tf, screen_kama())
+asset_17_status     = asset_17 == '' ? 0 : request.security(asset_17, custom_tf, screen_kama())
+asset_18_status     = asset_18 == '' ? 0 : request.security(asset_18, custom_tf, screen_kama())
+asset_19_status     = asset_19 == '' ? 0 : request.security(asset_19, custom_tf, screen_kama())
+asset_20_status     = asset_20 == '' ? 0 : request.security(asset_20, custom_tf, screen_kama())
+asset_21_status     = asset_21 == '' ? 0 : request.security(asset_21, custom_tf, screen_kama())
+asset_22_status     = asset_22 == '' ? 0 : request.security(asset_22, custom_tf, screen_kama())
+asset_23_status     = asset_23 == '' ? 0 : request.security(asset_23, custom_tf, screen_kama())
+asset_24_status     = asset_24 == '' ? 0 : request.security(asset_24, custom_tf, screen_kama())
+asset_25_status     = asset_25 == '' ? 0 : request.security(asset_25, custom_tf, screen_kama())
+asset_26_status     = asset_26 == '' ? 0 : request.security(asset_26, custom_tf, screen_kama())
+asset_27_status     = asset_27 == '' ? 0 : request.security(asset_27, custom_tf, screen_kama())
+asset_28_status     = asset_28 == '' ? 0 : request.security(asset_28, custom_tf, screen_kama())
+asset_29_status     = asset_29 == '' ? 0 : request.security(asset_29, custom_tf, screen_kama())
+asset_30_status     = asset_30 == '' ? 0 : request.security(asset_30, custom_tf, screen_kama())
+asset_31_status     = asset_31 == '' ? 0 : request.security(asset_31, custom_tf, screen_kama())
+asset_32_status     = asset_32 == '' ? 0 : request.security(asset_32, custom_tf, screen_kama())
+asset_33_status     = asset_33 == '' ? 0 : request.security(asset_33, custom_tf, screen_kama())
+asset_34_status     = asset_34 == '' ? 0 : request.security(asset_34, custom_tf, screen_kama())
+asset_35_status     = asset_35 == '' ? 0 : request.security(asset_35, custom_tf, screen_kama())
+asset_36_status     = asset_36 == '' ? 0 : request.security(asset_36, custom_tf, screen_kama())
+asset_37_status     = asset_37 == '' ? 0 : request.security(asset_37, custom_tf, screen_kama())
+asset_38_status     = asset_38 == '' ? 0 : request.security(asset_38, custom_tf, screen_kama())
+asset_39_status     = asset_39 == '' ? 0 : request.security(asset_39, custom_tf, screen_kama())
+asset_40_status     = asset_40 == '' ? 0 : request.security(asset_40, custom_tf, screen_kama())
+//} son
+// Al verenler {
+kama_up  = ""
+kama_up := asset_01 != '' and asset_01_status == 1 ? kama_up + syminfo.ticker(asset_01) + "\n" : kama_up
+kama_up := asset_02 != '' and asset_02_status == 1 ? kama_up + syminfo.ticker(asset_02) + "\n" : kama_up
+kama_up := asset_03 != '' and asset_03_status == 1 ? kama_up + syminfo.ticker(asset_03) + "\n" : kama_up
+kama_up := asset_04 != '' and asset_04_status == 1 ? kama_up + syminfo.ticker(asset_04) + "\n" : kama_up
+kama_up := asset_05 != '' and asset_05_status == 1 ? kama_up + syminfo.ticker(asset_05) + "\n" : kama_up
+kama_up := asset_06 != '' and asset_06_status == 1 ? kama_up + syminfo.ticker(asset_06) + "\n" : kama_up
+kama_up := asset_07 != '' and asset_07_status == 1 ? kama_up + syminfo.ticker(asset_07) + "\n" : kama_up
+kama_up := asset_08 != '' and asset_08_status == 1 ? kama_up + syminfo.ticker(asset_08) + "\n" : kama_up
+kama_up := asset_09 != '' and asset_09_status == 1 ? kama_up + syminfo.ticker(asset_09) + "\n" : kama_up
+kama_up := asset_10 != '' and asset_10_status == 1 ? kama_up + syminfo.ticker(asset_10) + "\n" : kama_up
+kama_up := asset_11 != '' and asset_11_status == 1 ? kama_up + syminfo.ticker(asset_11) + "\n" : kama_up
+kama_up := asset_12 != '' and asset_12_status == 1 ? kama_up + syminfo.ticker(asset_12) + "\n" : kama_up
+kama_up := asset_13 != '' and asset_13_status == 1 ? kama_up + syminfo.ticker(asset_13) + "\n" : kama_up
+kama_up := asset_14 != '' and asset_14_status == 1 ? kama_up + syminfo.ticker(asset_14) + "\n" : kama_up
+kama_up := asset_15 != '' and asset_15_status == 1 ? kama_up + syminfo.ticker(asset_15) + "\n" : kama_up
+kama_up := asset_16 != '' and asset_16_status == 1 ? kama_up + syminfo.ticker(asset_16) + "\n" : kama_up
+kama_up := asset_17 != '' and asset_17_status == 1 ? kama_up + syminfo.ticker(asset_17) + "\n" : kama_up
+kama_up := asset_18 != '' and asset_18_status == 1 ? kama_up + syminfo.ticker(asset_18) + "\n" : kama_up
+kama_up := asset_19 != '' and asset_19_status == 1 ? kama_up + syminfo.ticker(asset_19) + "\n" : kama_up
+kama_up := asset_20 != '' and asset_20_status == 1 ? kama_up + syminfo.ticker(asset_20) + "\n" : kama_up
+kama_up := asset_21 != '' and asset_21_status == 1 ? kama_up + syminfo.ticker(asset_21) + "\n" : kama_up
+kama_up := asset_22 != '' and asset_22_status == 1 ? kama_up + syminfo.ticker(asset_22) + "\n" : kama_up
+kama_up := asset_23 != '' and asset_23_status == 1 ? kama_up + syminfo.ticker(asset_23) + "\n" : kama_up
+kama_up := asset_24 != '' and asset_24_status == 1 ? kama_up + syminfo.ticker(asset_24) + "\n" : kama_up
+kama_up := asset_25 != '' and asset_25_status == 1 ? kama_up + syminfo.ticker(asset_25) + "\n" : kama_up
+kama_up := asset_26 != '' and asset_26_status == 1 ? kama_up + syminfo.ticker(asset_26) + "\n" : kama_up
+kama_up := asset_27 != '' and asset_27_status == 1 ? kama_up + syminfo.ticker(asset_27) + "\n" : kama_up
+kama_up := asset_28 != '' and asset_28_status == 1 ? kama_up + syminfo.ticker(asset_28) + "\n" : kama_up
+kama_up := asset_29 != '' and asset_29_status == 1 ? kama_up + syminfo.ticker(asset_29) + "\n" : kama_up
+kama_up := asset_30 != '' and asset_30_status == 1 ? kama_up + syminfo.ticker(asset_30) + "\n" : kama_up
+kama_up := asset_31 != '' and asset_31_status == 1 ? kama_up + syminfo.ticker(asset_31) + "\n" : kama_up
+kama_up := asset_32 != '' and asset_32_status == 1 ? kama_up + syminfo.ticker(asset_32) + "\n" : kama_up
+kama_up := asset_33 != '' and asset_33_status == 1 ? kama_up + syminfo.ticker(asset_33) + "\n" : kama_up
+kama_up := asset_34 != '' and asset_34_status == 1 ? kama_up + syminfo.ticker(asset_34) + "\n" : kama_up
+kama_up := asset_35 != '' and asset_35_status == 1 ? kama_up + syminfo.ticker(asset_35) + "\n" : kama_up
+kama_up := asset_36 != '' and asset_36_status == 1 ? kama_up + syminfo.ticker(asset_36) + "\n" : kama_up
+kama_up := asset_37 != '' and asset_37_status == 1 ? kama_up + syminfo.ticker(asset_37) + "\n" : kama_up
+kama_up := asset_38 != '' and asset_38_status == 1 ? kama_up + syminfo.ticker(asset_38) + "\n" : kama_up
+kama_up := asset_39 != '' and asset_39_status == 1 ? kama_up + syminfo.ticker(asset_39) + "\n" : kama_up
+kama_up := asset_40 != '' and asset_40_status == 1 ? kama_up + syminfo.ticker(asset_40) + "\n" : kama_up
+//} son
+// Sat verenler {
+kama_dn  = ""
+kama_dn := asset_01 != '' and asset_01_status == 2 ? kama_dn + syminfo.ticker(asset_01) + "\n" : kama_dn
+kama_dn := asset_02 != '' and asset_02_status == 2 ? kama_dn + syminfo.ticker(asset_02) + "\n" : kama_dn
+kama_dn := asset_03 != '' and asset_03_status == 2 ? kama_dn + syminfo.ticker(asset_03) + "\n" : kama_dn
+kama_dn := asset_04 != '' and asset_04_status == 2 ? kama_dn + syminfo.ticker(asset_04) + "\n" : kama_dn
+kama_dn := asset_05 != '' and asset_05_status == 2 ? kama_dn + syminfo.ticker(asset_05) + "\n" : kama_dn
+kama_dn := asset_06 != '' and asset_06_status == 2 ? kama_dn + syminfo.ticker(asset_06) + "\n" : kama_dn
+kama_dn := asset_07 != '' and asset_07_status == 2 ? kama_dn + syminfo.ticker(asset_07) + "\n" : kama_dn
+kama_dn := asset_08 != '' and asset_08_status == 2 ? kama_dn + syminfo.ticker(asset_08) + "\n" : kama_dn
+kama_dn := asset_09 != '' and asset_09_status == 2 ? kama_dn + syminfo.ticker(asset_09) + "\n" : kama_dn
+kama_dn := asset_10 != '' and asset_10_status == 2 ? kama_dn + syminfo.ticker(asset_10) + "\n" : kama_dn
+kama_dn := asset_11 != '' and asset_11_status == 2 ? kama_dn + syminfo.ticker(asset_11) + "\n" : kama_dn
+kama_dn := asset_12 != '' and asset_12_status == 2 ? kama_dn + syminfo.ticker(asset_12) + "\n" : kama_dn
+kama_dn := asset_13 != '' and asset_13_status == 2 ? kama_dn + syminfo.ticker(asset_13) + "\n" : kama_dn
+kama_dn := asset_14 != '' and asset_14_status == 2 ? kama_dn + syminfo.ticker(asset_14) + "\n" : kama_dn
+kama_dn := asset_15 != '' and asset_15_status == 2 ? kama_dn + syminfo.ticker(asset_15) + "\n" : kama_dn
+kama_dn := asset_16 != '' and asset_16_status == 2 ? kama_dn + syminfo.ticker(asset_16) + "\n" : kama_dn
+kama_dn := asset_17 != '' and asset_17_status == 2 ? kama_dn + syminfo.ticker(asset_17) + "\n" : kama_dn
+kama_dn := asset_18 != '' and asset_18_status == 2 ? kama_dn + syminfo.ticker(asset_18) + "\n" : kama_dn
+kama_dn := asset_19 != '' and asset_19_status == 2 ? kama_dn + syminfo.ticker(asset_19) + "\n" : kama_dn
+kama_dn := asset_20 != '' and asset_20_status == 2 ? kama_dn + syminfo.ticker(asset_20) + "\n" : kama_dn
+kama_dn := asset_21 != '' and asset_21_status == 2 ? kama_dn + syminfo.ticker(asset_21) + "\n" : kama_dn
+kama_dn := asset_22 != '' and asset_22_status == 2 ? kama_dn + syminfo.ticker(asset_22) + "\n" : kama_dn
+kama_dn := asset_23 != '' and asset_23_status == 2 ? kama_dn + syminfo.ticker(asset_23) + "\n" : kama_dn
+kama_dn := asset_24 != '' and asset_24_status == 2 ? kama_dn + syminfo.ticker(asset_24) + "\n" : kama_dn
+kama_dn := asset_25 != '' and asset_25_status == 2 ? kama_dn + syminfo.ticker(asset_25) + "\n" : kama_dn
+kama_dn := asset_26 != '' and asset_26_status == 2 ? kama_dn + syminfo.ticker(asset_26) + "\n" : kama_dn
+kama_dn := asset_27 != '' and asset_27_status == 2 ? kama_dn + syminfo.ticker(asset_27) + "\n" : kama_dn
+kama_dn := asset_28 != '' and asset_28_status == 2 ? kama_dn + syminfo.ticker(asset_28) + "\n" : kama_dn
+kama_dn := asset_29 != '' and asset_29_status == 2 ? kama_dn + syminfo.ticker(asset_29) + "\n" : kama_dn
+kama_dn := asset_30 != '' and asset_30_status == 2 ? kama_dn + syminfo.ticker(asset_30) + "\n" : kama_dn
+kama_dn := asset_31 != '' and asset_31_status == 2 ? kama_dn + syminfo.ticker(asset_31) + "\n" : kama_dn
+kama_dn := asset_32 != '' and asset_32_status == 2 ? kama_dn + syminfo.ticker(asset_32) + "\n" : kama_dn
+kama_dn := asset_33 != '' and asset_33_status == 2 ? kama_dn + syminfo.ticker(asset_33) + "\n" : kama_dn
+kama_dn := asset_34 != '' and asset_34_status == 2 ? kama_dn + syminfo.ticker(asset_34) + "\n" : kama_dn
+kama_dn := asset_35 != '' and asset_35_status == 2 ? kama_dn + syminfo.ticker(asset_35) + "\n" : kama_dn
+kama_dn := asset_36 != '' and asset_36_status == 2 ? kama_dn + syminfo.ticker(asset_36) + "\n" : kama_dn
+kama_dn := asset_37 != '' and asset_37_status == 2 ? kama_dn + syminfo.ticker(asset_37) + "\n" : kama_dn
+kama_dn := asset_38 != '' and asset_38_status == 2 ? kama_dn + syminfo.ticker(asset_38) + "\n" : kama_dn
+kama_dn := asset_39 != '' and asset_39_status == 2 ? kama_dn + syminfo.ticker(asset_39) + "\n" : kama_dn
+kama_dn := asset_40 != '' and asset_40_status == 2 ? kama_dn + syminfo.ticker(asset_40) + "\n" : kama_dn
+//} son
+//--------------
+// Tabloya yazdirilmesi
+//--------------
+var assetcount = asset_01=='' and asset_02=='' and asset_03=='' and asset_04=='' and asset_05=='' and asset_06=='' and asset_07=='' and asset_08=='' and asset_09=='' and asset_10=='' and asset_11=='' and asset_12=='' and asset_13=='' and asset_14=='' and asset_15=='' and asset_16=='' and asset_17=='' and asset_18=='' and asset_19=='' and asset_20=='' and asset_21=='' and asset_22=='' and asset_23=='' and asset_24=='' and asset_25=='' and asset_26=='' and asset_27=='' and asset_28=='' and asset_29=='' and asset_30=='' and asset_31=='' and asset_32=='' and asset_33=='' and asset_34=='' and asset_35=='' and asset_36=='' and asset_37=='' and asset_38=='' and asset_39=='' and asset_40=='' ? 0 : 1 
+var tf         = custom_tf == "" ? timeframe.period : custom_tf 
+var brl        = "\n-----------------------\n"
+
+title  = "EMTradeVKAMA \nPeriyot = "+tf+brl
+
+checklist   = assetcount==0 ? "Enstruman tanımlanmadı\nLütfen enstrüman parametrelerini kontrol et! " : ""
+LongList    = ""
+ShortList   = ""
+HisseList   = ""
+
+if(assetcount>0)
+    if(kama_up != "")
+        LongList := kama_up
+    
+    if(kama_dn != "")
+        ShortList := kama_dn
+    
+
+// Tabloyu oluştur
+getpos() =>
+    pos = ""
+    if (tabloaltUst == "SagAlt")
+        pos := position.bottom_right
+        pos
+    if (tabloaltUst == "SagUst")
+        pos := position.top_right
+        pos
+    if (tabloaltUst == "SolAlt")
+        pos := position.bottom_left
+        pos
+    if (tabloaltUst == "SolUst")
+        pos := position.top_left
+        pos
+    if (tabloaltUst == "OrtaAlt")
+        pos := position.bottom_center
+        pos
+    if (tabloaltUst == "OrtaUst")
+        pos := position.top_center
+        pos
+    pos
+var table myTable = table.new(getpos(), 12, 2, border_width=2)
+
+// Tabloyu güncelle
+if barstate.islast
+    txt1 = "EMTradeV\nKAMA\n" + 
+           "\------------\n" + LongList
+    txt2 = ShortList
+
+    table.cell(myTable, 0, 0, text=txt1, bgcolor=color.black, text_color=color.green, text_halign = text.align_left)
+    table.cell(myTable, 0, 1, text=txt2, bgcolor=color.black, text_color=color.red, text_halign = text.align_left)
