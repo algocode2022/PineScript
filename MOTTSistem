@@ -1,0 +1,85 @@
+//@version=5
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//developer: ANIL ÖZEKŞİ
+//code: Erol Mutlu
+strategy('Multiple OTT','MOTT', overlay=true, initial_capital = 10000, default_qty_type = strategy.percent_of_equity, default_qty_value = 100, commission_type = strategy.commission.percent, commission_value = 0.01, slippage = 1)
+src = input(close, title='Source')
+lengthX1 = input.int(2,'High/Low Period', minval=1)
+length = input.int(1, 'OTT Period', minval=1)
+percent = input.float(2.2, 'OTT Percent', step=0.1, minval=0)
+mav = input.string(title='Moving Average Type', defval='VAR', options=['SMA', 'EMA', 'WMA', 'TMA', 'VAR', 'WWMA', 'ZLEMA', 'TSF'])
+showsupport = input(title="Show MOVING AVERAGE?", defval=false)
+
+Var_Func(src, length) =>
+    valpha = 2 / (length + 1)
+    vud1 = src > src[1] ? src - src[1] : 0
+    vdd1 = src < src[1] ? src[1] - src : 0
+    vUD = math.sum(vud1, 9)
+    vDD = math.sum(vdd1, 9)
+    vCMO = nz((vUD - vDD) / (vUD + vDD))
+    VAR = 0.0
+    VAR := nz(valpha * math.abs(vCMO) * src) + (1 - valpha * math.abs(vCMO)) * nz(VAR[1])
+    VAR
+VAR = Var_Func(src, length)
+Wwma_Func(src, length) =>
+    wwalpha = 1 / length
+    WWMA = 0.0
+    WWMA := wwalpha * src + (1 - wwalpha) * nz(WWMA[1])
+    WWMA
+WWMA = Wwma_Func(src, length)
+Zlema_Func(src, length) =>
+    zxLag = length / 2 == math.round(length / 2) ? length / 2 : (length - 1) / 2
+    zxEMAData = src + src - src[zxLag]
+    ZLEMA = ta.ema(zxEMAData, length)
+    ZLEMA
+ZLEMA = Zlema_Func(src, length)
+Tsf_Func(src, length) =>
+    lrc = ta.linreg(src, length, 0)
+    lrc1 = ta.linreg(src, length, 1)
+    lrs = lrc - lrc1
+    TSF = ta.linreg(src, length, 0) + lrs
+    TSF
+TSF = Tsf_Func(src, length)
+
+ma(source, length, _type) =>
+    switch _type
+        "SMA" => ta.sma(source, length)
+        "EMA" => ta.ema(source, length)
+        "WMA" => ta.wma(source, length)
+        "TMA" => ta.sma(ta.sma(source, math.ceil(length / 2)), math.floor(length / 2) + 1)
+        "VAR" => Var_Func(source, length)
+        "VWMA" => ta.vwma(source, length)
+        "ZLEMA" => Zlema_Func(source, length)
+        "TSF" => Tsf_Func(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+
+MAvg =  ma(src, length, mav)
+
+K1 = ta.highest(high,lengthX1)
+K2 = ta.lowest(low,lengthX1)
+ott(source,length,percent) =>
+    MA = ma(source, length, mav)
+    fark = MA * percent * 0.01, longStop = MA - fark, shortStop =  MA + fark
+    longStop := longStop > nz(longStop[1]) or MA < nz(longStop[1]) ? longStop : nz(longStop[1])
+    shortStop := shortStop < nz(shortStop[1]) or  MA > nz(shortStop[1]) ? shortStop : nz(shortStop[1])
+    k1 = 0.0, k1 :=  MA > nz (k1[1]) ? longStop :  MA < nz(k1[1]) ? shortStop : nz(k1[1])
+    ot1 = 1 +  percent * 0.01 / 2
+    ot2 = 1 -  percent * 0.01 / 2
+    k2 =  MA> k1 ? k1 * ot1 : k1 * ot2
+    OT = nz(k2[2])
+
+O1 = ott(K1,length,percent)
+O2 = ott(K2,length,percent)
+
+plot(O1, "OTT", color=color.rgb(33, 170, 243), linewidth=1)
+plot(O2, "OTT5", color=color.rgb(199, 56, 224), linewidth=1)
+plot(showsupport ? MAvg : na, color=color.new(#051be1, 0), linewidth=2, title="VIDYA")
+
+var color = 0
+if close > math.max(O1, O2)
+    strategy.entry("Al", strategy.long)
+    color := 1
+if close < math.min(O1, O2)
+    strategy.close_all("Flat")
+    color := 0
+barcolor(color = color == 1 ? color.green : color.yellow)
