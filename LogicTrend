@@ -1,0 +1,62 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+strategy("LogicSistem", overlay=true, initial_capital = 100000, default_qty_value = 100, default_qty_type =  strategy.percent_of_equity)
+
+maxATRLossMult = input.int(3, "maxATRLossMult")
+BBLength = input.int(85, "BBLength")
+numStdDevs = input.float(1.5, "numStdDevs")
+highVolMult = input.int(3, "highVolMult")
+Exit = input.int(1, "Exit")
+
+[BBO, BBU, BBA] = ta.bb(close, BBLength, numStdDevs)
+plot(BBO)
+plot(BBU)
+plot(BBA)
+initialRisk = ta.atr(20)
+
+var slopeUp = false
+var slopeDn = false
+var largeAtr = 0.0
+var tradeRisk = 0.0
+var longLoss = 0.0
+var shortLoss = 0.0
+var IslemFiyat = 0.0
+
+largeAtr := highVolMult * initialRisk
+tradeRisk := BBU - BBO
+slopeUp := BBO > BBO[1] and BBO[1] > BBO[2] and BBO[2] > BBO[3]
+slopeDn := BBO < BBO[1] and BBO[1] < BBO[2] and BBO[2] < BBO[3]
+
+//{ Long Entry:}
+if (close > BBU and slopeUp and (tradeRisk < initialRisk * maxATRLossMult)) 
+    strategy.entry("Al", strategy.long)
+    IslemFiyat := close
+//{ Short Entry:}
+if (close < BBA and slopeDn and (tradeRisk < initialRisk * maxATRLossMult)) 
+    strategy.entry("Sat", strategy.short)
+    IslemFiyat := close
+
+//{Long Exits:}
+if (strategy.position_size > 0)
+    longLoss := initialRisk * maxATRLossMult
+    if (close < BBO) 
+        strategy.close_all("Flat")
+    if ((Exit == 1 or Exit == 2 or Exit == 3 or Exit == 7) and close < IslemFiyat - longLoss) 
+        strategy.close_all("Flat")
+    if ((Exit == 2 or Exit == 4 or Exit == 5 or Exit == 7) and BBO < BBO[1] and BBO[1] < BBO[2] and BBO[2] < BBO[3] and close < IslemFiyat) 
+        strategy.close_all("Flat")
+    if ((Exit == 3 or Exit == 5 or Exit == 6 or Exit == 7) and ta.tr(true) > largeAtr and close < close[1] and close[1] < close[2]) 
+        strategy.close_all("Flat")
+//{Short Exit:}
+if (strategy.position_size < 0)
+    shortLoss := initialRisk * maxATRLossMult
+    if (close > BBO) 
+        strategy.close_all("Flat")
+    if ((Exit == 1 or Exit == 2 or Exit == 3 or Exit == 7) and close > IslemFiyat + shortLoss) 
+        strategy.close_all("Flat")
+    if ((Exit == 2 or Exit == 4 or Exit == 5 or Exit == 7) and BBO > BBO[1] and BBO[1] > BBO[2] and BBO[2] > BBO[3] and close > IslemFiyat) 
+        strategy.close_all("Flat")
+    if ((Exit == 3 or Exit == 5 or Exit == 6 or Exit == 7) and ta.tr(true) > largeAtr and close > close[1] and close[1] > close[2]) 
+        strategy.close_all("Flat")
