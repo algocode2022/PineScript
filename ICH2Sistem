@@ -1,0 +1,47 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+strategy("ICH2Sistem", overlay=true, default_qty_value = 1, initial_capital = 0)
+
+grafik = input(title='Grafik On/Off ?', defval=true, group="Ichimoku Settings")
+getirigrafik = input(title='GetiriKZ On/Off ?', defval=true, group="Ichimoku Settings")
+conversionPeriods = input.int(9, minval=1, title="Conversion Line Length",  group="Ichimoku Settings")
+basePeriods = input.int(26, minval=1, title="Base Line Length",  group="Ichimoku Settings")
+laggingSpan2Periods = input.int(52, minval=1, title="Lagging Span 2 Length",  group="Ichimoku Settings")
+displacement = input.int(26, minval=1, title="Displacement",  group="Ichimoku Settings")
+
+donchian(len) => math.avg(ta.lowest(len), ta.highest(len))
+
+tenkanSen = donchian(conversionPeriods)
+kijunSen = donchian(basePeriods)
+spanA = math.avg(tenkanSen, kijunSen)
+spanB = donchian(laggingSpan2Periods)
+
+
+if (tenkanSen > kijunSen and close > math.max(spanA[displacement], spanB[displacement]) and close > close[2 * displacement] and close > kijunSen)
+    strategy.entry("Al", strategy.long)
+if (tenkanSen < kijunSen)
+    strategy.close_all("Flat")
+if (close < math.min(spanA[displacement], spanB[displacement]))
+    strategy.close_all("Flat")
+
+color barrenk = na
+if strategy.position_size > 0
+    barrenk := color.lime
+else
+    barrenk := color.new(color.gray, 50)
+
+barcolor(barrenk)
+plot(grafik ? tenkanSen:na, color=color.aqua, title="Conversion Line")
+plot(grafik ? kijunSen:na, color=color.red, title="Base Line")
+plot(grafik ? close:na, offset = -displacement, color=#43A047, title="Lagging Span")
+p1 = plot(grafik ? spanA:na, offset = displacement, color=#A5D6A7,
+	 title="Leading Span A")
+p2 = plot(grafik ? spanB : na, offset = displacement, color=#EF9A9A,
+	 title="Leading Span B")
+plot(grafik ? spanA > spanB ? spanA : spanB : na, offset = displacement, title = "Kumo Cloud Upper Line", display = display.none) 
+plot(grafik ? spanA < spanB ? spanA : spanB : na, offset = displacement, title = "Kumo Cloud Lower Line", display = display.none) 
+fill(p1, p2, color = spanA > spanB ? color.rgb(67, 160, 71, 90) : color.rgb(244, 67, 54, 90))
+
+plot(getirigrafik ? strategy.equity : na)
