@@ -1,0 +1,27 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=5
+indicator("Array Desrleri", overlay = true)
+
+// Array tanımı, kappanış değerlerini array'e almak için
+var float[] arr = array.new_float()
+// Tüm barların 'close' değerlerini diziye alıyoruz
+array.push(arr, close)
+// label için array tanımlıyoruz
+var label[] tablo = array.new_label()
+if bar_index > 1
+    array.push(tablo,label.new(bar_index, high,  textalign = text.align_right, text = "prevClose: " + str.tostring(array.get(arr, bar_index - 1), format.mintick) + "\n" + "thisClose: " + str.tostring(array.get(arr, bar_index), format.mintick), size = size.normal,color = array.get(arr, bar_index) > array.get(arr, bar_index - 1) ? color.new(color.green, 0) : color.new(color.red, 0)))
+if array.size(tablo) > 1
+    label.delete(array.shift(tablo))
+
+ema1 = ta.ema(array.get(arr, bar_index), 5)
+ema2 = ta.ema(array.get(arr, bar_index), 34)
+var label[] cross = array.new_label()
+if ta.crossover(ema1, ema2)
+    array.push(cross, label.new(bar_index, low, text = "Al", style = label.style_label_up, size = size.small, color = color.new(color.lime, 50), textcolor = color.new(color.white, 0)))
+if ta.crossover(ema2, ema1)
+    array.push(cross, label.new(bar_index, low, text = "Sat", style = label.style_label_down, size = size.small, color = color.new(color.red, 50), textcolor = color.new(color.white, 0)))
+
+plot(ema1, color = color.lime)
+plot(ema2, color = color.red)
