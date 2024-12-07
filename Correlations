@@ -1,0 +1,22 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=6
+indicator("Correlations [erolmutlu]", overlay = false, precision = 2)
+Len = input.int(14, "Periyot")
+symbol  = input.symbol('BINANCE:BTCUSDT', "Corr. Symbol")
+Data1 = close
+Data2 = request.security(symbol, timeframe.period, close)
+var Corr = 0.0
+if Len > 0
+    Var0 = 0.0
+    for i = 0 to Len - 1
+        Cond1 = (Data1[i] >= Data1[i + 1] and Data2[i] >= Data2[i + 1]) or (Data1[i] < Data1[i + 1] and Data2[i] < Data2[i + 1])
+        if Cond1 == true
+            Var0 := Var0 + 1
+    Corr := 2 * Var0 / Len - 1
+else
+    Corr := -2
+plot(Corr)
+plot(0.7, title = "Pos. Corr." ,color = color.new(color.gray, 0))
+plot(-0.7, title = "Neg. Corr." ,color = color.new(color.gray, 0))
