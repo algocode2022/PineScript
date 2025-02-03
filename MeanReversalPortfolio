@@ -1,0 +1,51 @@
+//@version=6
+// Erol Mutlu @eerolmutlu
+strategy("MeanReversalPortfolio [eerolmutlu]", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1)
+
+enableStrategy1 = input.bool(defval = true, title = "strategy 1", group = "Stratejiler")
+enableStrategy2 = input.bool(defval = true, title = "strategy 2", group = "Stratejiler")
+enableStrategy3 = input.bool(defval = true, title = "strategy 3", group = "Stratejiler")
+enableStrategy4 = input.bool(defval = true, title = "strategy 4", group = "Stratejiler")
+enableStrategy5 = input.bool(defval = true, title = "strategy 5", group = "Stratejiler")
+
+fromDateTime = input.time(defval = timestamp("2012-01-01T01:01+0000"), title = "From Date and time", group = "Time settings") 
+toDateTime = input.time(defval = timestamp("9999-01-01T01:01+0000"), title = "To Date and time", group = "Time settings")
+
+
+//Fonksiyonlar
+tradeDateIsAllowed() => 
+    time >= fromDateTime and time <= toDateTime
+
+strategy1() =>
+    avgHighLow = ta.sma(high-low, 25)
+    ibs = (close - low) / (high - low)
+    lowerBand = ta.highest(10) - avgHighLow * 2.5
+    enableStrategy1 ? close < lowerBand and ibs < 0.3 : false
+
+strategy2() =>
+    monday = dayofweek == dayofweek.monday
+    today_close_lower_than_friday_close = close < close[1]
+    friday_close_lower_than_thursday_close = close[1] < close[2]
+    enableStrategy2 ? monday and today_close_lower_than_friday_close and friday_close_lower_than_thursday_close : false   
+
+strategy3() =>
+    lowerChannel = ta.lowest(low[1], 5)
+    enableStrategy3 ?  close <= lowerChannel : false
+
+strategy4() =>
+    lowestRange = ta.lowest(high - low, 6)
+    ma200 = ta.sma(close, 200)
+    enableStrategy4 ? (lowestRange == high - low) and (close > ma200) : false
+
+strategy5() =>
+    highestHigh = ta.highest(high[1], 10)
+    ibs = (close - low) / (high - low)
+    enableStrategy5 ? high >= highestHigh and ibs < 0.15 : false
+
+buy = (strategy1() or strategy2() or strategy3() or strategy4() or strategy5()) and tradeDateIsAllowed()
+sell = close > high[1]
+
+if (buy)
+    strategy.entry("Buy", strategy.long)
+if (sell)
+    strategy.close("Buy", "Flat")
