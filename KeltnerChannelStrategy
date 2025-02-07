@@ -1,0 +1,35 @@
+//@version=6
+//@erolmutlu
+strategy("Keltner Channel Strategy", initial_capital=1000000, overlay=true, pyramiding=0)
+
+emaLength = input.int(defval = 20, title = "EMA length",  group = "Basic settings")
+atrBreakoutLength = input.int(defval = 10, title = "ATR breakout multiplier",  group = "Basic settings")
+multiplierUpper = input.int(defval = 1, title = "Upper", step = 1, group = "Basic settings")
+multiplierLower = input.float(defval = 0.5, title = "Lower", step = 1, group = "Basic settings")
+riskPercentage = input.float(defval = 1, title = "Risk per trade", group = "Basic settings")
+atrMultiplier = input.int(defval = 2, title = "ATR multiplier", group = "Basic settings")
+atrLength = input.int(defval = 20, title = "ATR length", group = "Basic settings")
+
+fromDateTime = input.time(defval = timestamp("2012-01-01T01:01+0000"), title = "From Date and time", group = "Time settings") 
+toDateTime = input.time(defval = timestamp("9999-01-01T01:01+0000"), title = "To Date and time", group = "Time settings")
+
+tradeDateIsAllowed() => time >= fromDateTime and time <= toDateTime
+
+ema = ta.ema(source =  close, length = emaLength)
+rangema = ta.atr(atrBreakoutLength)
+upperChannel = ema + rangema * multiplierUpper
+lowerChannel = ema - rangema * multiplierLower
+
+qty = ((riskPercentage/100)*strategy.equity) / (atrMultiplier * ta.atr(atrLength))
+
+buyCondition =  ta.crossover(close, upperChannel) and tradeDateIsAllowed()
+sellCondition = ta.crossunder(close, lowerChannel) and tradeDateIsAllowed()
+
+plot(upperChannel, color=color.green, title="Upper Channel")
+plot(ema, color=color.gray, title="EMA")
+plot(lowerChannel, color=color.red, title="Lower Channel")
+
+if (buyCondition)
+    strategy.entry("Long", strategy.long, qty = qty)
+if (sellCondition)
+    strategy.close("Long")
