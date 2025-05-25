@@ -1,0 +1,25 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=6
+indicator("HighLow [erolmutlu]", overlay = true)
+
+isHL(mode) =>
+   ret = mode == 1 ? high[4] < high[2] and high[3] <= high[2] and high[2] >= high[1] and high[2] > high[0] : 
+         mode == -1 ? low[4] > low[2] and low[3] >= low[2] and low[2] <= low[1] and low[2] < low[0] : false
+
+valuewhen_H0 = ta.valuewhen(isHL(1) == true, high[2], 0)
+valuewhen_H1 = ta.valuewhen(isHL(1) == true, high[2], 1)
+valuewhen_H2 = ta.valuewhen(isHL(1) == true, high[2], 2)
+higherhigh = isHL(1) == false ? false : valuewhen_H1 < valuewhen_H0 and valuewhen_H2 < valuewhen_H0
+lowerhigh = isHL(1) == false ? false : valuewhen_H1 > valuewhen_H0 and valuewhen_H2 > valuewhen_H0
+valuewhen_L0 = ta.valuewhen(isHL(-1) == true, low[2], 0)
+valuewhen_L1 = ta.valuewhen(isHL(-1) == true, low[2], 1)
+valuewhen_L2 = ta.valuewhen(isHL(-1) == true, low[2], 2)
+higherlow = isHL(-1) == false ? false : valuewhen_L1 < valuewhen_L0 and valuewhen_L2 < valuewhen_L0
+lowerlow = isHL(-1) == false ? false : valuewhen_L1 > valuewhen_L0 and valuewhen_L2 > valuewhen_L0
+
+plotshape(higherhigh, title='Higher High', style=shape.square, location=location.abovebar, color=color.red, text="[HH]", textcolor = color.red, offset=-2)
+plotshape(lowerhigh, title='Lower High', style=shape.square, location=location.abovebar, color=color.red, text="[LH]", textcolor = color.red, offset=-2)
+plotshape(higherlow, title='High Low', style=shape.square, location=location.belowbar, color=color.green, text="[HL]", textcolor = color.green, offset=-2)
+plotshape(lowerlow, title='Lower Low', style=shape.square, location=location.belowbar, color=color.green, text="[LL]", textcolor = color.green, offset=-2)
