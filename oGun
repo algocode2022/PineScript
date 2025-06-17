@@ -1,0 +1,16 @@
+//@version=6
+// authow: erolmutlu
+strategy("oGun [erolmutlu]", overlay=true)
+
+yeniGun = ta.change(time("D")) > 0
+var float oGun = na
+if yeniGun or na(oGun)
+    oGun := open
+
+plot(oGun, color=color.red, linewidth=1, style = plot.style_circles)
+barcolor(strategy.position_size > 0 ? color.lime : color.gray)
+
+if (close > oGun[1])
+    strategy.entry("A", strategy.long)
+if (close < oGun[1])
+    strategy.close_all("F")
