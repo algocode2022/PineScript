@@ -1,0 +1,18 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © erolmutlu
+
+//@version=6
+strategy("EM Bulutu", overlay = true)
+
+P1 = input.int(55)
+ema3 = ta.ema(close, P1)
+ema4 = ta.ema(close, P1*2 - 1)
+
+p3 = plot(ema3, color = ema3 > ema4 ? color.new(color.lime, 50) : color.new(color.red, 50))
+p4 = plot(ema4, color =ema3 > ema4 ? color.new(color.lime, 50) : color.new(color.red, 50))
+fill(p3, p4, color = ema3 > ema4 ? color.new(color.lime, 70) : color.new(color.red, 70))
+
+if close > math.max(ema3, ema4)
+    strategy.entry("A", strategy.long)
+if close < math.min(ema3, ema4)
+    strategy.close_all("F")
